@@ -56,7 +56,13 @@ def pdf_chat():
 
             session["chat_history"] = session["chat_history"][-6:]
 
-            ai_reply = ai_service.generate_response(session["chat_history"])
+            document_text = session.get("document_text")
+
+            ai_reply = ai_service.generate_response(
+                session["chat_history"],
+                document_text=document_text
+            )
+
 
             session["chat_history"].append({
                 "role": "assistant",
