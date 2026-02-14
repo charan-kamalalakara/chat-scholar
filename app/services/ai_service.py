@@ -1,13 +1,16 @@
 import requests
 
+
 class AIService:
     def __init__(self):
         self.url = "http://localhost:11434/api/generate"
         self.model = "tinyllama"
 
-    def generate_response(self, chat_history, document_text=None):
+    def generate_response(self, chat_history, document_chunks=None):
 
-        # get latest user question
+        # -----------------------------
+        # Get latest user question
+        # -----------------------------
         latest_question = ""
 
         for msg in reversed(chat_history):
@@ -15,19 +18,28 @@ class AIService:
                 latest_question = msg["content"]
                 break
 
-        # limit document size (tiny models can't handle huge text)
-        if document_text:
-            document_text = document_text[:3000]
+        # -----------------------------
+        # Build prompt
+        # -----------------------------
+        if document_chunks:
+
+            context = "\n\n".join(document_chunks)
 
             prompt = f"""
-Use the following document to answer the question.
+You are an AI assistant answering questions using document context.
 
-Document:
-{document_text}
+Use ONLY the information from the context.
+If the answer is not present, say:
+"I could not find this information in the document."
+
+Context:
+{context}
 
 Question: {latest_question}
-Answer using only the document information:
+
+Answer:
 """
+
         else:
             prompt = f"""
 Answer the following question clearly and briefly.
@@ -36,6 +48,9 @@ Question: {latest_question}
 Answer:
 """
 
+        # -----------------------------
+        # Call Ollama
+        # -----------------------------
         try:
             payload = {
                 "model": self.model,
@@ -43,7 +58,7 @@ Answer:
                 "stream": False,
                 "options": {
                     "temperature": 0.1,
-                    "num_predict": 150
+                    "num_predict": 180
                 }
             }
 
@@ -53,7 +68,7 @@ Answer:
                 reply = response.json()["response"].strip()
 
                 if not reply:
-                    return "I couldn't find an answer in the document."
+                    return "I couldn't find an answer."
 
                 return reply
 
