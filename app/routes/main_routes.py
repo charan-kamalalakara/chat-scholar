@@ -48,6 +48,12 @@ def pdf_chat():
         "pdf_chat.html",
         chat_history=session["chat_history"]
     )
+    
+@main.route("/clear-chat")
+def clear_chat():
+    session.pop("chat_history", None)
+    return render_template("pdf_chat.html", chat_history=[])
+
 
 
 @main.route("/essay-grading")
