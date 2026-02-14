@@ -5,26 +5,32 @@
 </head>
 
 <body>
-    <h1>📄 Chat with AI (TinyLlama)</h1>
 
-    <!-- Chat Form -->
-    <form method="POST">
-        <input type="text" name="user_input" placeholder="Ask something..." required>
-        <button type="submit">Send</button>
-    </form>
+<h1>📄 Chat Scholar</h1>
 
-    <hr>
+<form method="POST">
+    <input type="text" name="user_input" placeholder="Ask something..." required>
+    <button type="submit">Send</button>
+</form>
 
-    {% if user_message %}
-        <p><strong>You:</strong> {{ user_message }}</p>
+<hr>
+
+<div>
+    {% if chat_history %}
+        {% for message in chat_history %}
+            {% if message.role == "user" %}
+                <p><strong>You:</strong> {{ message.content }}</p>
+            {% else %}
+                <p><strong>AI:</strong> {{ message.content }}</p>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p>No conversation yet. Start chatting!</p>
     {% endif %}
+</div>
 
-    {% if response %}
-        <p><strong>AI:</strong> {{ response }}</p>
-    {% endif %}
-
-    <br>
-    <a href="/">⬅ Back to Home</a>
+<br>
+<a href="/">⬅ Back to Home</a>
 
 </body>
 </html>
