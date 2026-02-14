@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()   # MUST BE FIRST
+
 from flask import Flask
 from app.routes.main_routes import main
 
