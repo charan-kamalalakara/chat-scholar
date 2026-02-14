@@ -3,10 +3,28 @@
 <head>
     <title>PDF Chat - Chat Scholar</title>
 </head>
+
 <body>
-    <h1>📄 Chat with PDF</h1>
-    <p>PDF chat interface coming soon...</p>
-    <p>{{ response }}</p>
+    <h1>📄 Chat with AI (TinyLlama)</h1>
+
+    <!-- Chat Form -->
+    <form method="POST">
+        <input type="text" name="user_input" placeholder="Ask something..." required>
+        <button type="submit">Send</button>
+    </form>
+
+    <hr>
+
+    {% if user_message %}
+        <p><strong>You:</strong> {{ user_message }}</p>
+    {% endif %}
+
+    {% if response %}
+        <p><strong>AI:</strong> {{ response }}</p>
+    {% endif %}
+
+    <br>
     <a href="/">⬅ Back to Home</a>
+
 </body>
 </html>
