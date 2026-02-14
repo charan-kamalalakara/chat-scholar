@@ -1,9 +1,7 @@
-from flask import Blueprint
+from flask import Blueprint, render_template
 
-# Create a Blueprint
 main = Blueprint("main", __name__)
 
-# Home route
 @main.route("/")
 def home():
-    return "Chat Scholar backend is running!"
+    return render_template("home.html")
