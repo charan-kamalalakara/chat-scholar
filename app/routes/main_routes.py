@@ -1,5 +1,7 @@
+import os
 from flask import Blueprint, render_template, request, session
 from app.services.ai_service import AIService
+from app.utils.pdf_reader import extract_text_from_pdf
 
 main = Blueprint("main", __name__)
 ai_service = AIService()
@@ -10,49 +12,63 @@ def home():
     return render_template("home.html")
 
 
+@main.route("/clear-chat")
+def clear_chat():
+    session.pop("chat_history", None)
+    return render_template("pdf_chat.html", chat_history=[])
+
+
 @main.route("/pdf-chat", methods=["GET", "POST"])
 def pdf_chat():
 
-    # Initialize chat history
     if "chat_history" not in session:
         session["chat_history"] = []
-    # FIX old session format automatically
-    elif isinstance(session["chat_history"][0], str):
-        session["chat_history"] = []
-
 
     if request.method == "POST":
+
+        # -------- PDF Upload --------
+        if "pdf_file" in request.files:
+            pdf = request.files["pdf_file"]
+
+            if pdf and pdf.filename.endswith(".pdf"):
+                os.makedirs("data", exist_ok=True)
+                save_path = os.path.join("data", pdf.filename)
+                pdf.save(save_path)
+
+                print(f"PDF saved at: {save_path}")
+
+                # ✅ Extract text
+                pdf_text = extract_text_from_pdf(save_path)
+
+                # Store document text in session
+                session["document_text"] = pdf_text
+
+                print("PDF text extracted successfully")
+
+        # -------- Chat Message --------
         user_message = request.form.get("user_input")
 
-        # Store user message (structured format)
-        session["chat_history"].append({
-            "role": "user",
-            "content": user_message
-        })
+        if user_message:
+            session["chat_history"].append({
+                "role": "user",
+                "content": user_message
+            })
 
-        # ✅ LIMIT MEMORY (important for TinyLlama)
-        session["chat_history"] = session["chat_history"][-6:]
+            session["chat_history"] = session["chat_history"][-6:]
 
-        # Generate AI reply
-        ai_reply = ai_service.generate_response(session["chat_history"])
+            ai_reply = ai_service.generate_response(session["chat_history"])
 
-        # Store AI reply
-        session["chat_history"].append({
-            "role": "assistant",
-            "content": ai_reply
-        })
+            session["chat_history"].append({
+                "role": "assistant",
+                "content": ai_reply
+            })
 
-        session.modified = True
+            session.modified = True
 
     return render_template(
         "pdf_chat.html",
         chat_history=session["chat_history"]
     )
-    
-@main.route("/clear-chat")
-def clear_chat():
-    session.pop("chat_history", None)
-    return render_template("pdf_chat.html", chat_history=[])
 
 
 

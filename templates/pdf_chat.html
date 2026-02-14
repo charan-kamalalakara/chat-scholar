@@ -2,83 +2,70 @@
 <html>
 <head>
     <title>Chat Scholar</title>
-    <div style="text-align:center; margin:10px;">
-        <a href="/clear-chat">
-            <button type="button">🧹 Clear Chat</button>
-        </a>
-    </div>
-
 
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f8;
-            margin: 0;
+            font-family: Arial;
+            background:#f4f6f8;
+            margin:0;
         }
 
-        h1 {
-            text-align: center;
-            background: #2c3e50;
-            color: white;
-            padding: 15px;
-            margin: 0;
+        h1{
+            background:#2c3e50;
+            color:white;
+            text-align:center;
+            padding:15px;
+            margin:0;
         }
 
-        .chat-container {
-            max-width: 800px;
-            margin: 20px auto;
-            background: white;
-            height: 70vh;
-            overflow-y: auto;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        .chat-container{
+            max-width:800px;
+            margin:20px auto;
+            background:white;
+            height:65vh;
+            overflow-y:auto;
+            padding:20px;
+            border-radius:8px;
+            box-shadow:0 0 10px rgba(0,0,0,0.1);
         }
 
-        .message {
-            padding: 10px 15px;
-            margin: 10px 0;
-            border-radius: 15px;
-            max-width: 70%;
-            word-wrap: break-word;
+        .message{
+            padding:10px 15px;
+            margin:10px 0;
+            border-radius:15px;
+            max-width:70%;
         }
 
-        .user {
-            background-color: #3498db;
-            color: white;
-            margin-left: auto;
-            text-align: right;
+        .user{
+            background:#3498db;
+            color:white;
+            margin-left:auto;
+            text-align:right;
         }
 
-        .assistant {
-            background-color: #ecf0f1;
-            color: black;
-            margin-right: auto;
+        .assistant{
+            background:#ecf0f1;
+            margin-right:auto;
         }
 
-        .input-area {
-            max-width: 800px;
-            margin: 10px auto;
-            display: flex;
-            gap: 10px;
+        .input-area{
+            max-width:800px;
+            margin:10px auto;
+            display:flex;
+            gap:10px;
         }
 
-        input[type="text"] {
-            flex: 1;
-            padding: 12px;
-            font-size: 16px;
+        input[type="text"]{
+            flex:1;
+            padding:12px;
         }
 
-        button {
-            padding: 12px 20px;
-            background: #2c3e50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #1a252f;
+        button{
+            padding:12px;
+            background:#2c3e50;
+            color:white;
+            border:none;
+            cursor:pointer;
         }
     </style>
 </head>
@@ -87,29 +74,46 @@
 
 <h1>📘 Chat Scholar</h1>
 
+<div style="text-align:center;margin:10px;">
+    <a href="/clear-chat" style="
+        background:#e74c3c;
+        color:white;
+        padding:10px 15px;
+        text-decoration:none;
+        border-radius:5px;">
+        🧹 Clear Chat
+    </a>
+</div>
+
+
+<!-- PDF Upload -->
+<form method="POST" enctype="multipart/form-data" action="/pdf-chat">
+    <input type="file" name="pdf_file" accept=".pdf">
+    <button type="submit">Upload PDF</button>
+</form>
+
 <div class="chat-container" id="chatBox">
 
-    {% if chat_history %}
-        {% for message in chat_history %}
-            <div class="message {{ message.role }}">
-                {{ message.content }}
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>Start chatting with Chat Scholar!</p>
-    {% endif %}
+{% if chat_history %}
+    {% for message in chat_history %}
+        <div class="message {{ message.role }}">
+            {{ message.content }}
+        </div>
+    {% endfor %}
+{% else %}
+    <p>Start chatting with Chat Scholar!</p>
+{% endif %}
 
 </div>
 
-<form method="POST" class="input-area">
+<form method="POST" action="/pdf-chat" class="input-area">
     <input type="text" name="user_input" placeholder="Ask something..." required>
     <button type="submit">Send</button>
 </form>
 
 <script>
-    // Auto scroll to bottom
-    const chatBox = document.getElementById("chatBox");
-    chatBox.scrollTop = chatBox.scrollHeight;
+    const chatBox=document.getElementById("chatBox");
+    chatBox.scrollTop=chatBox.scrollHeight;
 </script>
 
 </body>
