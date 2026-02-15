@@ -16,7 +16,8 @@ ai_service = AIService()
 embedding_service = EmbeddingService()
 
 # Global vector DB (in-memory)
-vector_store = None
+vector_store = VectorStore.load()
+
 
 
 @main.route("/")
@@ -77,9 +78,15 @@ def pdf_chat():
                 if embeddings:
                     dimension = len(embeddings[0])
                     vector_store = VectorStore(dimension)
-                    vector_store.add_embeddings(embeddings, valid_chunks)
+                    vector_store.add_embeddings(
+                        embeddings,
+                        valid_chunks,
+                        source_name=pdf.filename
+                    )
+
 
                     print("✅ Vector store created successfully")
+                    vector_store.save()
 
         # =========================
         # CHAT MESSAGE HANDLING

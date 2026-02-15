@@ -1,18 +1,33 @@
 import faiss
 import numpy as np
+import pickle
+import os
 
 
 class VectorStore:
 
     def __init__(self, dimension):
         self.index = faiss.IndexFlatL2(dimension)
-        self.text_chunks = []
+        self.metadata = []
 
-    def add_embeddings(self, embeddings, chunks):
+
+    # ---------------------------
+    # Add embeddings
+    # ---------------------------
+    def add_embeddings(self, embeddings, chunks, source_name):
         vectors = np.array(embeddings).astype("float32")
         self.index.add(vectors)
-        self.text_chunks.extend(chunks)
 
+        for chunk in chunks:
+            self.metadata.append({
+                "text": chunk,
+                "source": source_name
+            })
+
+
+    # ---------------------------
+    # Search
+    # ---------------------------
     def search(self, query_embedding, top_k=3):
         query_vector = np.array([query_embedding]).astype("float32")
 
@@ -24,3 +39,39 @@ class VectorStore:
                 results.append(self.text_chunks[idx])
 
         return results
+
+    # ---------------------------
+    # Save index
+    # ---------------------------
+    def save(self, folder="vector_db"):
+        os.makedirs(folder, exist_ok=True)
+
+        faiss.write_index(self.index, f"{folder}/faiss.index")
+
+        with open(f"{folder}/chunks.pkl", "wb") as f:
+            pickle.dump(self.metadata, f)
+
+
+        print("✅ Vector database saved")
+
+    # ---------------------------
+    # Load index
+    # ---------------------------
+    @classmethod
+    def load(cls, folder="vector_db"):
+
+        if not os.path.exists(f"{folder}/faiss.index"):
+            return None
+
+        index = faiss.read_index(f"{folder}/faiss.index")
+
+        with open(f"{folder}/chunks.pkl", "rb") as f:
+            metadata = pickle.load(f)
+
+        store = cls(index.d)
+        store.index = index
+        store.metadata = metadata
+
+        print("✅ Vector database loaded")
+
+        return store
