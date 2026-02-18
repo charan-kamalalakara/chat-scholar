@@ -141,6 +141,19 @@ def stream_chat():
 
 
 
-@main.route("/essay-grading")
+@main.route("/essay-grading", methods=["GET", "POST"])
 def essay_grading():
-    return render_template("essay_grading.html")
+
+    result = None
+
+    if request.method == "POST":
+        essay_text = request.form.get("essay_text")
+
+        if essay_text:
+            result = ai_service.grade_essay(essay_text)
+
+    return render_template(
+        "essay_grading.html",
+        result=result
+    )
+

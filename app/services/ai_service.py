@@ -8,7 +8,7 @@ class AIService:
         self.model = "tinyllama"
 
     # ---------------------------------------------------
-    # NORMAL RESPONSE (used for non-stream fallback)
+    # NORMAL RESPONSE (PDF CHAT)
     # ---------------------------------------------------
     def generate_response(self, chat_history, document_chunks=None):
 
@@ -54,17 +54,21 @@ Answer:
             "stream": False
         }
 
-        response = requests.post(self.url, json=payload)
+        try:
+            response = requests.post(self.url, json=payload)
+            reply = response.json()["response"].strip()
 
-        reply = response.json()["response"].strip()
+            if source_info:
+                reply += f"\n\n📄 Source: {source_info}"
 
-        if source_info:
-            reply += f"\n\n📄 Source: {source_info}"
+            return reply
 
-        return reply
+        except Exception as e:
+            print("AI response error:", e)
+            return "⚠️ AI service error."
 
     # ---------------------------------------------------
-    # STREAMING RESPONSE (NEW)
+    # STREAMING RESPONSE (LIVE CHAT)
     # ---------------------------------------------------
     def stream_response(self, chat_history, document_chunks=None):
 
@@ -125,3 +129,47 @@ Answer:
 
         if source_info:
             yield f"\n\n📄 Source: {source_info}"
+
+    # ---------------------------------------------------
+    # ESSAY GRADING (NEW FEATURE)
+    # ---------------------------------------------------
+    def grade_essay(self, essay_text):
+
+        prompt = f"""
+You are an academic essay evaluator.
+
+Evaluate the following student essay and provide:
+
+1. Overall Score (out of 10)
+2. Strengths
+3. Weaknesses
+4. Grammar Feedback
+5. Suggestions for Improvement
+
+Essay:
+{essay_text}
+
+Evaluation:
+"""
+
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": 0.2,
+                "num_predict": 300
+            }
+        }
+
+        try:
+            response = requests.post(self.url, json=payload)
+
+            if response.status_code == 200:
+                return response.json()["response"].strip()
+
+            return "⚠️ Essay grading failed."
+
+        except Exception as e:
+            print("Essay grading error:", e)
+            return "⚠️ AI grading service unavailable."
