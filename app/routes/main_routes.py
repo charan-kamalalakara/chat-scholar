@@ -1,6 +1,7 @@
 import os
 import json
 from flask import Blueprint, render_template, request, session, Response
+from app.utils.document_registry import add_document, load_documents
 
 from app.services.ai_service import AIService
 from app.services.embedding_service import EmbeddingService
@@ -78,14 +79,18 @@ def pdf_chat():
                     )
 
                     vector_store.save()
+                    add_document(pdf.filename)
+
 
                     print(f"✅ Added document to knowledge base: {pdf.filename}")
 
 
     return render_template(
         "pdf_chat.html",
-        chat_history=session.get("chat_history", [])
+        chat_history=session.get("chat_history", []),
+        documents=load_documents()
     )
+
 
 
 # ---------------------------------------------------

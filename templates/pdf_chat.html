@@ -98,6 +98,23 @@
     <button type="submit">Upload PDF</button>
 </form>
 </div>
+<div style="max-width:800px;margin:10px auto;background:white;
+padding:10px;border-radius:8px;box-shadow:0 0 5px rgba(0,0,0,0.1);">
+
+<h3>📚 Knowledge Base</h3>
+
+{% if documents %}
+    <ul>
+        {% for doc in documents %}
+            <li>✅ {{ doc }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No documents uploaded yet.</p>
+{% endif %}
+
+</div>
+
 
 <!-- ================= Chat Window ================= -->
 <div class="chat-container" id="chatBox">
