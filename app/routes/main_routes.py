@@ -65,8 +65,11 @@ def pdf_chat():
                         valid_chunks.append(chunk)
 
                 if embeddings:
-                    dimension = len(embeddings[0])
-                    vector_store = VectorStore(dimension)
+
+                    if vector_store is None:
+                        dimension = len(embeddings[0])
+                        vector_store = VectorStore(dimension)
+
 
                     vector_store.add_embeddings(
                         embeddings,
@@ -75,6 +78,9 @@ def pdf_chat():
                     )
 
                     vector_store.save()
+
+                    print(f"✅ Added document to knowledge base: {pdf.filename}")
+
 
     return render_template(
         "pdf_chat.html",
