@@ -8,13 +8,13 @@ class VectorStore:
 
     def __init__(self, dimension):
         self.index = faiss.IndexFlatL2(dimension)
-        self.metadata = []
+        self.metadata = []   # stores text + source
 
-
-    # ---------------------------
-    # Add embeddings
-    # ---------------------------
+    # ---------------------------------
+    # Add embeddings with metadata
+    # ---------------------------------
     def add_embeddings(self, embeddings, chunks, source_name):
+
         vectors = np.array(embeddings).astype("float32")
         self.index.add(vectors)
 
@@ -24,39 +24,39 @@ class VectorStore:
                 "source": source_name
             })
 
-
-    # ---------------------------
-    # Search
-    # ---------------------------
+    # ---------------------------------
+    # Semantic search
+    # ---------------------------------
     def search(self, query_embedding, top_k=3):
+
         query_vector = np.array([query_embedding]).astype("float32")
 
         distances, indices = self.index.search(query_vector, top_k)
 
         results = []
+
         for idx in indices[0]:
-            if idx < len(self.text_chunks):
-                results.append(self.text_chunks[idx])
+            if idx < len(self.metadata):
+                results.append(self.metadata[idx])
 
         return results
 
-    # ---------------------------
-    # Save index
-    # ---------------------------
+    # ---------------------------------
+    # Save vector DB
+    # ---------------------------------
     def save(self, folder="vector_db"):
         os.makedirs(folder, exist_ok=True)
 
         faiss.write_index(self.index, f"{folder}/faiss.index")
 
-        with open(f"{folder}/chunks.pkl", "wb") as f:
+        with open(f"{folder}/metadata.pkl", "wb") as f:
             pickle.dump(self.metadata, f)
-
 
         print("✅ Vector database saved")
 
-    # ---------------------------
-    # Load index
-    # ---------------------------
+    # ---------------------------------
+    # Load vector DB
+    # ---------------------------------
     @classmethod
     def load(cls, folder="vector_db"):
 
@@ -65,7 +65,7 @@ class VectorStore:
 
         index = faiss.read_index(f"{folder}/faiss.index")
 
-        with open(f"{folder}/chunks.pkl", "rb") as f:
+        with open(f"{folder}/metadata.pkl", "rb") as f:
             metadata = pickle.load(f)
 
         store = cls(index.d)

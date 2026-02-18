@@ -1,4 +1,5 @@
 import requests
+import json
 
 
 class AIService:
@@ -6,11 +7,11 @@ class AIService:
         self.url = "http://localhost:11434/api/generate"
         self.model = "tinyllama"
 
+    # ---------------------------------------------------
+    # NORMAL RESPONSE (used for non-stream fallback)
+    # ---------------------------------------------------
     def generate_response(self, chat_history, document_chunks=None):
 
-        # ---------------------------------
-        # Get latest user question
-        # ---------------------------------
         latest_question = ""
 
         for msg in reversed(chat_history):
@@ -18,19 +19,13 @@ class AIService:
                 latest_question = msg["content"]
                 break
 
-        # ---------------------------------
-        # Build prompt (RAG + Citation)
-        # ---------------------------------
         source_info = ""
 
         if document_chunks:
-
-            # Combine retrieved chunk texts
             context_text = "\n\n".join(
                 [chunk["text"] for chunk in document_chunks]
             )
 
-            # Collect unique sources
             sources = list(set(
                 [chunk["source"] for chunk in document_chunks]
             ))
@@ -38,11 +33,10 @@ class AIService:
             source_info = ", ".join(sources)
 
             prompt = f"""
-You are an AI assistant answering questions using document context.
+You are an academic AI assistant.
 
-Use ONLY the information from the provided context.
-If the answer is not present, say:
-"I could not find this information in the document."
+Use ONLY the provided context to answer.
+If answer not present, say you cannot find it.
 
 Context:
 {context_text}
@@ -51,45 +45,83 @@ Question: {latest_question}
 
 Answer:
 """
-
         else:
+            prompt = f"Question: {latest_question}\nAnswer:"
+
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False
+        }
+
+        response = requests.post(self.url, json=payload)
+
+        reply = response.json()["response"].strip()
+
+        if source_info:
+            reply += f"\n\n📄 Source: {source_info}"
+
+        return reply
+
+    # ---------------------------------------------------
+    # STREAMING RESPONSE (NEW)
+    # ---------------------------------------------------
+    def stream_response(self, chat_history, document_chunks=None):
+
+        latest_question = ""
+
+        for msg in reversed(chat_history):
+            if msg["role"] == "user":
+                latest_question = msg["content"]
+                break
+
+        source_info = ""
+
+        if document_chunks:
+            context_text = "\n\n".join(
+                [chunk["text"] for chunk in document_chunks]
+            )
+
+            sources = list(set(
+                [chunk["source"] for chunk in document_chunks]
+            ))
+
+            source_info = ", ".join(sources)
+
             prompt = f"""
-Answer the following question clearly and briefly.
+You are an academic AI assistant.
+
+Use ONLY the provided context.
+
+Context:
+{context_text}
 
 Question: {latest_question}
+
 Answer:
 """
+        else:
+            prompt = f"Question: {latest_question}\nAnswer:"
 
-        # ---------------------------------
-        # Call Ollama
-        # ---------------------------------
-        try:
-            payload = {
-                "model": self.model,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.1,
-                    "num_predict": 180
-                }
-            }
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": True
+        }
 
-            response = requests.post(self.url, json=payload)
+        response = requests.post(
+            self.url,
+            json=payload,
+            stream=True
+        )
 
-            if response.status_code == 200:
-                reply = response.json()["response"].strip()
+        for line in response.iter_lines():
+            if line:
+                try:
+                    data = json.loads(line.decode("utf-8"))
+                    yield data.get("response", "")
+                except:
+                    continue
 
-                if not reply:
-                    return "I couldn't find an answer."
-
-                # Add citation if document used
-                if source_info:
-                    reply += f"\n\n📄 Source: {source_info}"
-
-                return reply
-
-            return "⚠️ Ollama error."
-
-        except Exception as e:
-            print("Ollama Error:", e)
-            return "⚠️ Ollama server not running."
+        if source_info:
+            yield f"\n\n📄 Source: {source_info}"

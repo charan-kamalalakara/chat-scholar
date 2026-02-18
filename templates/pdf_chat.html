@@ -34,6 +34,7 @@
             margin:10px 0;
             border-radius:15px;
             max-width:70%;
+            word-wrap: break-word;
         }
 
         .user{
@@ -67,6 +68,11 @@
             border:none;
             cursor:pointer;
         }
+
+        .upload-box{
+            text-align:center;
+            margin:15px;
+        }
     </style>
 </head>
 
@@ -85,13 +91,15 @@
     </a>
 </div>
 
-
-<!-- PDF Upload -->
+<!-- ================= PDF Upload ================= -->
+<div class="upload-box">
 <form method="POST" enctype="multipart/form-data" action="/pdf-chat">
-    <input type="file" name="pdf_file" accept=".pdf">
+    <input type="file" name="pdf_file" accept=".pdf" required>
     <button type="submit">Upload PDF</button>
 </form>
+</div>
 
+<!-- ================= Chat Window ================= -->
 <div class="chat-container" id="chatBox">
 
 {% if chat_history %}
@@ -106,15 +114,62 @@
 
 </div>
 
-<form method="POST" action="/pdf-chat" class="input-area">
-    <input type="text" name="user_input" placeholder="Ask something..." required>
-    <button type="submit">Send</button>
-</form>
+<!-- ================= Chat Input ================= -->
+<div class="input-area">
+    <input type="text" id="userInput" placeholder="Ask something..." />
+    <button onclick="sendMessage()">Send</button>
+</div>
 
 <script>
-    const chatBox=document.getElementById("chatBox");
-    chatBox.scrollTop=chatBox.scrollHeight;
+
+const chatBox = document.getElementById("chatBox");
+chatBox.scrollTop = chatBox.scrollHeight;
+
+async function sendMessage(){
+
+    const input = document.getElementById("userInput");
+    const message = input.value.trim();
+
+    if(!message) return;
+
+    input.value = "";
+
+    // Show user message
+    chatBox.innerHTML += `
+        <div class="message user">${message}</div>
+    `;
+
+    // Create AI message box
+    const aiDiv = document.createElement("div");
+    aiDiv.className = "message assistant";
+    chatBox.appendChild(aiDiv);
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Streaming POST request
+    const response = await fetch("/stream-chat", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message: message })
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        aiDiv.innerHTML += chunk.replace(/data:/g, "");
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+}
+
 </script>
+
 
 </body>
 </html>
